@@ -1,0 +1,410 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmname": {
+      "type": "string",
+      "metadata": {
+        "description": "The virtual machine name not more than 15 charaters ."
+      }
+    },
+    "newStorageAccountSuffix": {
+      "type": "string",
+      "metadata": {
+        "description": "The storage account name."
+      }
+    },
+    "diagnosticstorageAccountSuffix": {
+      "type": "string",
+      "metadata": {
+        "description": "The diagnostics storage account name."
+      }
+    },
+    "adminUserName": {
+      "type": "string",
+      "metadata": {
+        "description": "User Name for the Virtual Machine"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The local administrator password."
+      }
+    },
+    "vmSize": {
+      "defaultValue": [
+        "Standard_A1",
+        "Standard_F8s"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "The VM size."
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location"
+      }
+    },
+    "sqlConnectivityType": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Server Virtual Machine SQL Connectivity Type"
+      },
+      "defaultValue": "Public"
+    },
+    "sqlPortNumber": {
+      "type": "int",
+      "metadata": {
+        "description": "SQL Server Virtual Machine SQL Port Number"
+      },
+      "defaultValue": 1433
+    },
+    "sqlStorageDisksCount": {
+      "type": "int",
+      "metadata": {
+        "description": "SQL Server Virtual Machine Data Disk Count"
+      },
+      "defaultValue": 2
+    },
+    "sqlStorageWorkloadType": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Server Virtual Machine Workload Type: GENERAL - general work load; DW - datawear house work load; OLTP - Transactional processing work load"
+      },
+      "allowedValues": [
+        "GENERAL",
+        "OLTP",
+        "DW"
+      ],
+      "defaultValue": "GENERAL"
+    },
+    "sqlStorageDisksConfigurationType": {
+      "type": "string",
+      "defaultValue": "NEW"
+    },
+    "sqlStorageStartingDeviceId": {
+      "type": "int",
+      "defaultValue": 2
+    },
+    "sqlAutopatchingDayOfWeek": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Server Auto Patching Day of A Week"
+      },
+      "allowedValues": [
+        "Everyday",
+        "Never",
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+      ],
+      "defaultValue": "Sunday"
+    },
+    "sqlAutopatchingStartHour": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Server Auto Patching Starting Hour"
+      },
+      "allowedValues": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23"
+      ],
+      "defaultValue": "2"
+    },
+    "sqlAutopatchingWindowDuration": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Server Auto Patching Duration Window in minutes"
+      },
+      "allowedValues": [
+        "30",
+        "60",
+        "90",
+        "120",
+        "150",
+        "180"
+      ],
+      "defaultValue": "60"
+    },
+    "sqlAuthenticationLogin": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Server Authentication Login Account Name"
+      }
+    },
+    "sqlAuthenticationPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SQL Server Authentication Login Account Password"
+      }
+    }
+  },
+  "variables": {
+    "uniqueStringArray": "[concat(uniqueString(parameters('newStorageAccountSuffix')))]",
+    "uniqueStringArray2": "[concat(uniqueString(parameters('diagnosticstorageAccountSuffix')))]",
+    "diagnosticStorageAccount":"[concat(variables('uniqueStringArray2'), parameters('diagnosticstorageAccountSuffix'))]",
+    "addressPrefix": "10.0.0.0/16",
+    "virtualNetworkName": "[concat(parameters('vmname'),'-vnet')]",
+    "nicName": "[concat(parameters('vmname'),'-nic')]",
+    "OSDiskName": "[concat(parameters('vmname'), '-osdisk')]",
+    "publicIPName": "[concat(parameters('vmname'), '-pip')]",
+    "publicIPAddressType": "Dynamic",
+    "storageAccountType": "Standard_LRS",
+    "subnetName": "default",
+    "subnetPrefix": "10.0.0.0/24",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+    "vmStorageAccountContainerName": "vhds",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
+    "storageApiVersion": "2015-06-15",
+    "apiVersion": "2015-06-15"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[concat(variables('uniqueStringArray'), parameters('newStorageAccountSuffix'))]",
+      "location": "[parameters('location')]",
+      "apiVersion": "2015-06-15",
+      "tags": {
+        "displayName": "StorageAccount"
+      },
+      "properties": {
+        "accountType": "[variables('storageAccountType')]"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('diagnosticStorageAccount')]",
+      "location": "[parameters('location')]",
+      "apiVersion": "2015-06-15",
+      "tags": {
+        "displayName": "Diagnostic Storage Account"
+      },
+      "properties": {
+        "accountType": "Standard_LRS"
+      }
+    },
+    {
+      "apiVersion": "2016-03-30",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('virtualNetworkName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "VirtualNetwork"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "default",
+            "properties": {
+              "addressPrefix": "[variables('subnetPrefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2016-03-30",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[concat(variables('publicIPName'))]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "PublicIPAddress"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "[variables('publicIPAddressType')]"
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('nicName')]",
+      "apiVersion": "2015-06-15",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPName'))]",
+        "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+        "[concat('Microsoft.Storage/storageAccounts/', concat(variables('uniqueStringArray'), parameters('newStorageAccountSuffix')))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',concat(variables('publicIPName')))]"
+              },
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('vmname')]",
+      "apiVersion": "2015-06-15",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', concat(variables('nicName')))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmname')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "windowsConfiguration": {
+            "provisionVMAgent": true,
+            "enableAutomaticUpdates": true
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftSQLServer",
+            "offer": "SQL2012SP3-WS2012R2",
+            "sku": "Standard",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "osdisk",
+            "vhd": {
+              "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', concat(variables('uniqueStringArray'), parameters('newStorageAccountSuffix'))), variables('apiVersion')).primaryEndpoints.blob, 'vhds/',concat(variables('OSDiskName')),'.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          },
+          "dataDisks": [
+            {
+              "name": "[concat(parameters('vmname'), '-disk-01')]",
+              "vhd": {
+                "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', concat(variables('uniqueStringArray'), parameters('newStorageAccountSuffix'))), variables('apiVersion')).primaryEndpoints.blob, 'vhds/',parameters('vmname'),'-Datadisk-01-20170312.vhd')]"
+              },
+              "createOption": "empty",
+              "lun": 0,
+              "diskSizeGB": "1023",
+              "caching": "ReadOnly"
+            },
+            {
+              "name": "[concat(parameters('vmname'), '-disk-02')]",
+              "vhd": {
+                "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', concat(variables('uniqueStringArray'), parameters('newStorageAccountSuffix'))), variables('apiVersion')).primaryEndpoints.blob, 'vhds/',parameters('vmname'),'-Datadisk-02-20170312.vhd')]"
+              },
+              "createOption": "empty",
+              "lun": 1,
+              "diskSizeGB": "1023",
+              "caching": "ReadOnly"
+            }
+          ]
+      },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]",
+              "properties": {
+                "primary": true
+              }
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": "true",
+            "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('diagnosticStorageAccount')), variables('apiVersion')).primaryEndpoints.blob)]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('vmname'), '/SqlIaasExtension')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmname'))]",
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmname'))]"
+      ],
+      "properties": {
+        "type": "SqlIaaSAgent",
+        "publisher": "Microsoft.SqlServer.Management",
+        "typeHandlerVersion": "1.2",
+        "autoUpgradeMinorVersion": "true",
+        "settings": {
+          "AutoTelemetrySettings": {
+            "Region": "[resourceGroup().location]"
+          },
+          "AutoPatchingSettings": {
+            "PatchCategory": "WindowsMandatoryUpdates",
+            "Enable": true,
+            "DayOfWeek": "[parameters('sqlAutopatchingDayOfWeek')]",
+            "MaintenanceWindowStartingHour": "[parameters('sqlAutopatchingStartHour')]",
+            "MaintenanceWindowDuration": "[parameters('sqlAutopatchingWindowDuration')]"
+          },
+          "AutoBackupSettings": {
+            "Enable": false,
+            "RetentionPeriod": "30",
+            "EnableEncryption": false
+          },
+
+          "ServerConfigurationsManagementSettings": {
+            "SQLConnectivityUpdateSettings": {
+              "ConnectivityType": "[parameters('sqlConnectivityType')]",
+              "Port": "[parameters('sqlPortNumber')]"
+            },
+            "SQLWorkloadTypeUpdateSettings": {
+              "SQLWorkloadType": "[parameters('sqlStorageWorkloadType')]"
+            },
+            "SQLStorageUpdateSettings": {
+              "DiskCount": "[parameters('sqlStorageDisksCount')]",
+              "NumberOfColumns": "[parameters('sqlStorageDisksCount')]",
+              "StartingDeviceID": "[parameters('sqlStorageStartingDeviceId')]",
+              "DiskConfigurationType": "[parameters('sqlStorageDisksConfigurationType')]"
+            }
+
+          }
+        },
+        "protectedSettings": {
+          "SQLAuthUpdateUserName": "[parameters('sqlAuthenticationLogin')]",
+          "SQLAuthUpdatePassword": "[parameters('sqlAuthenticationPassword')]"
+        }
+      }
+    }
+  ]
+}
