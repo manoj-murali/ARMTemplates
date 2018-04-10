@@ -1,0 +1,85 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sourceDiskid": {
+      "type": "string",
+      "metadata": {
+        "description": "Source Managed disk ID  }
+    },
+    "DiskName": {
+      "type": "string",
+      "metadata": {
+        "description": "New Managed Disk Name (The names will be appended with 'OsDisk' and 'dataDisk')"
+      }
+    },
+    "osType": {
+      "allowedValues": [
+        "Windows",
+        "Linux",
+        "DataDisk"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Choose Operating System type. - Windows or Linux or DataDisk"
+      }
+    },
+    "diskSize": {
+      "type": "int",
+      "metadata": {
+        "description": "Disk Size in GB"
+      }
+    },
+    "sku": {
+      "allowedValues": [
+        "Standard_LRS",
+        "Premium_LRS"
+      ],
+      "type": "string"
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location"
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Compute/disks",
+      "sku": {
+        "name": "[parameters('sku')]"
+      },
+      "name": "[concat(parameters('DiskName'), 'Datadisk')]",
+      "apiVersion": "2017-03-30",
+      "location": "[parameters('location')]",
+      "properties": {
+        "creationData": {
+          "createOption": "Copy",
+          "sourceResourceId": "[parameters('sourceDiskid')]"
+        },
+        "diskSizeGB": "[parameters('diskSize')]"
+      },
+      "condition": "[equals(parameters('osType'), 'DataDisk')]"
+    },
+    {
+      "type": "Microsoft.Compute/disks",
+      "sku": {
+        "name": "[parameters('sku')]"
+      },
+      "name": "[concat(parameters('DiskName'), 'osDisk')]",
+      "apiVersion": "2017-03-30",
+      "location": "[parameters('location')]",
+      "properties": {
+        "osType": "[parameters('osType')]",
+        "creationData": {
+          "createOption": "Copy",
+          "sourceResourceId": "[parameters('sourceDiskid')]"
+        },
+        "diskSizeGB": "[parameters('diskSize')]"
+      },
+      "condition": "[not(equals(parameters('osType'), 'DataDisk'))]"
+    }
+  ]
+}
