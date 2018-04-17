@@ -5,7 +5,8 @@
     "sourceDiskid": {
       "type": "string",
       "metadata": {
-        "description": "Source Managed disk ID  }
+        "description": "Source Managed disk ID "
+      }
     },
     "DiskName": {
       "type": "string",
