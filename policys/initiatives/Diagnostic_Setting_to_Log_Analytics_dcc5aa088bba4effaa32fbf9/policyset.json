@@ -1,0 +1,89 @@
+{
+ "properties": {
+  "displayName": "Diagnostic Setting to Log Analytics",
+  "policyType": "Custom",
+  "description": "sent Diagnostic setting logs to Log Analytics",
+  "metadata": {
+   "category": "Monitoring",
+   "version": "0.1",
+   "parameterScopes": {
+    "azureRegions": "/subscriptions/abcb1a12-7caf-41e8-975c-54c83ca4e582"
+   },
+   "createdBy": "2b767e0f-9356-46a2-8a19-39a4504e2631",
+   "createdOn": "2020-10-13T16:58:36.8666531Z",
+   "updatedBy": "2b767e0f-9356-46a2-8a19-39a4504e2631",
+   "updatedOn": "2020-10-13T18:32:58.5752345Z"
+  },
+  "parameters": {
+   "LA workspace Name": {
+    "type": "String",
+    "metadata": {
+     "displayName": "LA Workspace Name",
+     "description": "log Analytics Name"
+    },
+    "defaultValue": "LA_WOrk"
+   }
+  },
+  "policyDefinitions": [
+   {
+    "policyDefinitionReferenceId": "Deploy Diagnostic Settings for Key Vault to LA workspace_1",
+    "policyDefinitionId": "/subscriptions/abcb1a12-7caf-41e8-975c-54c83ca4e582/providers/Microsoft.Authorization/policyDefinitions/Deploy Diagnostic Settings for Key Vault to LA workspace",
+    "parameters": {
+     "profileName": {
+      "value": "kv-dia"
+     },
+     "logAnalytics": {
+      "value": "[parameters('LA workspace Name')]"
+     },
+     "azureRegions": {
+      "value": [
+       "eastus2"
+      ]
+     },
+     "metricsEnabled": {
+      "value": "True"
+     }
+    },
+    "groupNames": []
+   },
+   {
+    "policyDefinitionReferenceId": "Deploy Diagnostic Settings for Logic Apps to Log Analytics workspace_1",
+    "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/b889a06c-ec72-4b03-910a-cb169ee18721",
+    "parameters": {
+     "logAnalytics": {
+      "value": "[parameters('LA workspace Name')]"
+     },
+     "metricsEnabled": {
+      "value": "True"
+     }
+    },
+    "groupNames": []
+   },
+   {
+    "policyDefinitionReferenceId": "Deploy Diagnostic Settings for Data Lake Storage Gen1 to Log Analytics workspace_1",
+    "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/25763a0a-5783-4f14-969e-79d4933eb74b",
+    "parameters": {
+     "logAnalytics": {
+      "value": "[parameters('LA workspace Name')]"
+     },
+     "metricsEnabled": {
+      "value": "True"
+     },
+     "logsEnabled": {
+      "value": "False"
+     }
+    },
+    "groupNames": []
+   }
+  ],
+  "policyDefinitionGroups": [
+   {
+    "name": "monitoring",
+    "description": "Group"
+   }
+  ]
+ },
+ "id": "/subscriptions/abcb1a12-7caf-41e8-975c-54c83ca4e582/providers/Microsoft.Authorization/policySetDefinitions/dcc5aa088bba4effaa32fbf9",
+ "type": "Microsoft.Authorization/policySetDefinitions",
+ "name": "dcc5aa088bba4effaa32fbf9"
+}

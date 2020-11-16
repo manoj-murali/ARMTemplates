@@ -1,0 +1,36 @@
+name: manage-azure-policy-000d9b1a
+on:
+  workflow_dispatch:
+    inputs:
+      remarks:
+        description: 'Reason for triggering the workflow run'
+        required: false
+        default: 'Updating Azure Policies'
+
+
+## Uncomment the following if you wish to automatically trigger workflow run with every commit
+#
+#  push:
+#    paths:
+#      - 'policys/policies/Deploy_Advanced_Data_Security/_Vulnerability_Assessment_on_SQL_server_e02ddcfc-67a1-46e2-94fb-5496ac85ed46/**'
+#      - 'policys/initiatives/Diagnostic_Setting_to_Log_Analytics_dcc5aa088bba4effaa32fbf9/**'
+#      - 'policys/policies/Deploy_network_watcher_when_virtual_networks_are_created_a9b99dd8-06c5-4317-8629-9d86a3c6e7d9/**'
+#      - .github/workflows/manage-azure-policy-000d9b1a.yml
+jobs:
+  apply-azure-policy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_CREDENTIALS_000d9b1a}}
+        allow-no-subscriptions: true
+    - name: Create or Update Azure Policies
+      uses: azure/manage-azure-policy@v0
+      with:
+        paths: |
+          policys/policies/Deploy_Advanced_Data_Security/_Vulnerability_Assessment_on_SQL_server_e02ddcfc-67a1-46e2-94fb-5496ac85ed46/**
+          policys/initiatives/Diagnostic_Setting_to_Log_Analytics_dcc5aa088bba4effaa32fbf9/**
+          policys/policies/Deploy_network_watcher_when_virtual_networks_are_created_a9b99dd8-06c5-4317-8629-9d86a3c6e7d9/**
